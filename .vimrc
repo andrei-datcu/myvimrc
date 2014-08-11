@@ -22,6 +22,10 @@ Plugin 'mhinz/vim-signify'
 
 Plugin 'restore_view.vim'
 
+Plugin 'xoria256.vim'
+Plugin 'noahfrederick/vim-hemisu'
+Plugin 'spf13/vim-colors'
+
 " Python
 Plugin 'python.vim'
 Plugin 'python_match.vim'
@@ -72,10 +76,11 @@ set nospell
 set noexpandtab
 set relativenumber
 set backup
+set autochdir
 set viminfo='10,\"100,:20,%,n~/.vim/.viminfo'
+colorscheme default "For the indent_guides to work ok
 set t_Co=256
 set laststatus=2 "Always show statusline
-colorscheme default
 let g:indent_guides_start_level = 2
 let g:indent_guides_guide_size = 1
 let g:indent_guides_enable_on_vim_startup = 1
@@ -103,6 +108,45 @@ function! StripTrailingWhitespace()
     " clean up: restore previous search history, and cursor position
     let @/=_s
     call cursor(l, c)
+endfunction
+
+
+" Initialize directories {
+function! InitializeDirectories()
+    let parent = $HOME
+    let prefix = 'vim'
+    let dir_list = {
+                \ 'backup': 'backupdir',
+                \ 'views': 'viewdir',
+                \ 'swap': 'directory' }
+    if has('persistent_undo')
+        let dir_list['undo'] = 'undodir'
+    endif
+    " To specify a different directory in which to place the vimbackup,
+    " vimviews, vimundo, and vimswap files/directories, add the following to
+    " your .vimrc.before.local file:
+    " let g:spf13_consolidated_directory = <full path to desired directory>
+    " eg: let g:spf13_consolidated_directory = $HOME . '/.vim/'
+    if exists('g:spf13_consolidated_directory')
+        let common_dir = g:spf13_consolidated_directory . prefix
+    else
+        let common_dir = parent . '/.' . prefix
+    endif
+    for [dirname, settingname] in items(dir_list)
+        let directory = common_dir . dirname . '/'
+        if exists("*mkdir")
+            if !isdirectory(directory)
+                call mkdir(directory)
+            endif
+        endif
+        if !isdirectory(directory)
+            echo "Warning: Unable to create backup directory: " . directory
+            echo "Try: mkdir -p " . directory
+        else
+            let directory = substitute(directory, " ", "\\\\ ", "g")
+            exec "set " . settingname . "=" . directory
+        endif
+    endfor
 endfunction
 
  " Cscope
