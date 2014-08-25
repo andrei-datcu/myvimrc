@@ -30,10 +30,15 @@ Plugin 'spf13/vim-colors'
 Plugin 'python.vim'
 Plugin 'python_match.vim'
 Plugin 'pythoncomplete'
+Plugin 'davidhalter/jedi-vim'
+Plugin 'jmcantrell/vim-virtualenv'
+""Plugin 'vim-scripts/Pydiction'
+Plugin 'Valloric/YouCompleteMe'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required
+filetype plugin on
 
 set cursorline
 
@@ -84,6 +89,33 @@ set laststatus=2 "Always show statusline
 let g:indent_guides_start_level = 2
 let g:indent_guides_guide_size = 1
 let g:indent_guides_enable_on_vim_startup = 1
+set virtualedit=onemore
+let g:jedi#auto_initialization = 0
+let g:ycm_register_as_syntastic_checker = 0
+
+""Syntastic Options
+
+let g:syntastic_check_on_open=1         " Always check when buffers are opened
+let g:syntastic_enable_balloons = 1
+
+function FindDjangoSettings()
+  if strlen($VIRTUAL_ENV) && has('python')
+    let output  = system("find $VIRTUAL_ENV \\( -wholename '*/lib/*' -or -wholename '*/install/' \\) -or \\( -name 'settings.py' -print0 \\) | tr '\n' ' '")
+    let outarray= split(output, '[\/]\+')
+    let module  = outarray[-2] . '.' . 'settings'
+    let syspath = system("python -c 'import sys; print sys.path' | tr '\n' ' ' ")
+    " let curpath = '/' . join(outarray[:-2], '/')
+
+    execute 'python import sys, os'
+    " execute 'python sys.path.append("' . curpath . '")'
+    " execute 'python sys.path.append("' . syspath . '")'
+    execute 'python sys.path = ' . syspath
+    execute 'python os.environ.setdefault("DJANGO_SETTINGS_MODULE", "' . module . '")'
+  endif
+endfunction
+autocmd FileType python call FindDjangoSettings()
+""autocmd FileType python setlocal completeopt+=preview
+""autocmd FileType python setlocal omnifunc=pythoncomplete#Complete
 
 " Restore cursor
 function! ResCur()
@@ -133,7 +165,7 @@ function! InitializeDirectories()
         let common_dir = parent . '/.' . prefix
     endif
     for [dirname, settingname] in items(dir_list)
-        let directory = common_dir . dirname . '/'
+        let directory = common_dir . '/' . dirname . '/'
         if exists("*mkdir")
             if !isdirectory(directory)
                 call mkdir(directory)
@@ -148,6 +180,7 @@ function! InitializeDirectories()
         endif
     endfor
 endfunction
+call InitializeDirectories()
 
  " Cscope
 if has("cscope")
